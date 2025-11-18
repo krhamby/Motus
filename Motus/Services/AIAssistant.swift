@@ -252,7 +252,8 @@ class AIAssistant: ObservableObject {
                 generating: AssistantResponse.self
             )
 
-            return response
+            // Extract the generated struct from the response
+            return response.content
         } catch {
             // Handle Foundation Models errors
             lastError = "Foundation Models error: \(error.localizedDescription)"
