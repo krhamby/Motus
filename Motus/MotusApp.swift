@@ -12,8 +12,6 @@ import SwiftData
 struct MotusApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            // Original models
-            Item.self,
             // Car maintenance models
             Vehicle.self,
             MaintenanceRecord.self,
