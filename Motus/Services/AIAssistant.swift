@@ -38,8 +38,22 @@ class AIAssistant: ObservableObject {
     private let semanticSearch = SemanticSearch()
     private let modelContext: ModelContext
 
+    // Foundation Models session for AI inference
+    private let languageModelSession: LanguageModelSession
+
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
+
+        // Initialize Foundation Models session with system instructions
+        let systemInstructions = """
+        You are an expert automotive assistant specializing in car manuals and maintenance.
+        You provide accurate, helpful answers based on official car manual documentation.
+        Always cite specific page numbers when answering questions.
+        If you're unsure or the information isn't in the provided context, say so honestly.
+        Be concise but thorough in your explanations.
+        """
+
+        self.languageModelSession = LanguageModelSession(instructions: systemInstructions)
     }
 
     // MARK: - Document Processing
@@ -230,18 +244,20 @@ class AIAssistant: ObservableObject {
     /// Generates structured response using Foundation Models framework
     /// This uses the @Generable macro for type-safe AI responses
     private func generateStructuredResponse(prompt: String) async throws -> AssistantResponse {
-        // TODO: Implement actual Foundation Models API call when available
-        // For now, return a placeholder that demonstrates the structure
+        do {
+            // Use Foundation Models to generate structured response
+            // The @Generable macro on AssistantResponse enables type-safe output
+            let response = try await languageModelSession.respond(
+                to: prompt,
+                generating: AssistantResponse.self
+            )
 
-        // In production, this would be:
-        // let response = try await FoundationModels.generate(
-        //     prompt: prompt,
-        //     outputType: AssistantResponse.self
-        // )
-
-        // Placeholder implementation
-        // In a real app with Foundation Models, this would call the actual API
-        throw AIAssistantError.foundationModelsNotAvailable
+            return response
+        } catch {
+            // Handle Foundation Models errors
+            lastError = "Foundation Models error: \(error.localizedDescription)"
+            throw AIAssistantError.processingFailed(error.localizedDescription)
+        }
     }
 
     // MARK: - General Chat (without document)
@@ -260,19 +276,25 @@ class AIAssistant: ObservableObject {
 
         Provide a helpful, accurate answer based on general automotive knowledge.
         If you need specific information about their car, suggest uploading their owner's manual.
+        Keep your response concise and actionable.
         """
 
-        // TODO: Implement with Foundation Models
-        // For now, provide helpful fallback
-        return """
-        I'd be happy to help with that! For the most accurate information specific to your vehicle, \
-        I recommend uploading your car's owner manual. This will allow me to provide precise answers \
-        based on your exact make and model.
+        do {
+            // Use Foundation Models for general questions
+            let response = try await languageModelSession.respond(to: prompt)
+            return response.content
+        } catch {
+            lastError = "Failed to generate response: \(error.localizedDescription)"
 
-        In the meantime, here's general guidance: \(query)
+            // Provide helpful fallback if Foundation Models fails
+            return """
+            I'd be happy to help with that! For the most accurate information specific to your vehicle, \
+            I recommend uploading your car's owner manual. This will allow me to provide precise answers \
+            based on your exact make and model.
 
-        Would you like to upload your owner's manual to get more specific information?
-        """
+            Would you like to upload your owner's manual to get more specific information?
+            """
+        }
     }
 }
 
@@ -281,7 +303,6 @@ class AIAssistant: ObservableObject {
 enum AIAssistantError: LocalizedError {
     case documentNotProcessed
     case noRelevantContent
-    case foundationModelsNotAvailable
     case processingFailed(String)
 
     var errorDescription: String? {
@@ -290,8 +311,6 @@ enum AIAssistantError: LocalizedError {
             return "This document hasn't been processed yet. Please wait for processing to complete."
         case .noRelevantContent:
             return "I couldn't find relevant information in the manual to answer your question."
-        case .foundationModelsNotAvailable:
-            return "Foundation Models framework is not available. Please ensure you're running iOS 26+ and have Apple Intelligence enabled."
         case .processingFailed(let message):
             return "Processing failed: \(message)"
         }
