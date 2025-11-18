@@ -5,6 +5,7 @@
 //  Created by Kevin Hamby on 10/7/25.
 //
 
+import Charts
 import SwiftUI
 import SwiftData
 
@@ -13,45 +14,93 @@ struct ContentView: View {
     @Query private var items: [Item]
 
     var body: some View {
-        NavigationSplitView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
-                    } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
-                    }
+        NavigationView {
+            VStack(alignment: .leading) {
+                HStack {
+                    Text("Dashboard")
+                        .font(.largeTitle)
+                        .bold()
+                        .padding()
+
+                    Spacer()
                 }
-                .onDelete(perform: deleteItems)
+
+                HStack {
+                    Card()
+                    Card()
+                }
+                .padding(.horizontal)
+
+                Chart {
+                    BarMark(
+                        x: .value("Trip", 1),
+                        y: .value("Miles", 25)
+                    )
+                    BarMark(
+                        x: .value("Trip", 2),
+                        y: .value("Miles", 13)
+                    )
+                }
+                .padding()
+                .frame(height: 250)
+
+                HStack {
+                    Card()
+                    Card()
+                }
+                .padding(.horizontal)
+
+                HStack {
+                    Card()
+                    Card()
+                }
+                .padding(.horizontal)
+
+                Spacer()
             }
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
+                ToolbarItem(placement: .principal) {
+                    HStack {
+                        Text("Dashboard")
+                            .font(.largeTitle)
+                            .bold()
+                        Spacer()
+                    }
                 }
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
+
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Edit") {
+                        // Edit action
                     }
                 }
             }
-        } detail: {
-            Text("Select an item")
         }
     }
+}
 
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(timestamp: Date())
-            modelContext.insert(newItem)
-        }
-    }
+struct Card: View {
+    var body: some View {
+        VStack(alignment: .leading) {
+            HStack {
+                Text("Title")
+                    .font(.title)
 
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(items[index])
+                Spacer()
+            }
+
+            Spacer()
+
+            HStack {
+                Text("Body")
+
+                Spacer()
             }
         }
+        .frame(maxWidth: .infinity)
+        .padding(.all)
+        .background(Color(.systemGray5))
+        .frame(height: 125)
+        .clipShape(RoundedRectangle(cornerRadius: 20))
     }
 }
 
