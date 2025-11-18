@@ -2,7 +2,8 @@
 //  CarManualAssistantView.swift
 //  Motus
 //
-//  AI-powered car manual assistant using Apple Intelligence
+//  Legacy AI assistant view (placeholder implementation)
+//  Note: The production RAG-powered implementation is in ManualLibraryView
 //
 
 import SwiftUI
@@ -18,7 +19,7 @@ struct CarManualAssistantView: View {
     @State private var inputText = ""
     @State private var isProcessing = false
     @State private var showingDocumentPicker = false
-    @State private var manualDocuments: [ManualDocument] = []
+    @State private var uploadedFiles: [UploadedPDFFile] = []
 
     var body: some View {
         NavigationStack {
@@ -54,8 +55,8 @@ struct CarManualAssistantView: View {
                                 .clipShape(RoundedRectangle(cornerRadius: 12))
                             }
 
-                            ForEach(manualDocuments) { doc in
-                                ManualDocumentCard(document: doc)
+                            ForEach(uploadedFiles) { doc in
+                                UploadedPDFCard(document: doc)
                             }
                         }
                         .padding(.horizontal)
@@ -145,8 +146,9 @@ struct CarManualAssistantView: View {
                 .background(Color(.systemGray6))
             }
             .navigationTitle("Manual Assistant")
+            .navigationBarTitleDisplayMode(.inline)
             .sheet(isPresented: $showingDocumentPicker) {
-                DocumentPickerView(manualDocuments: $manualDocuments)
+                PDFDocumentPicker(uploadedFiles: $uploadedFiles)
             }
         }
     }
@@ -176,11 +178,9 @@ struct CarManualAssistantView: View {
     }
 
     private func generateResponse(for query: String) -> String {
-        // This is a placeholder. In production, you would:
-        // 1. Use Apple's Foundation Models to process the query
-        // 2. Search through uploaded manual documents
-        // 3. Use CoreML for document understanding
-        // 4. Generate contextual responses
+        // PLACEHOLDER IMPLEMENTATION
+        // For production RAG-powered AI, use ManualLibraryView instead
+        // This provides basic pattern-matched responses for demonstration
 
         let lowercaseQuery = query.lowercased()
 
@@ -280,6 +280,9 @@ struct CarManualAssistantView: View {
     }
 }
 
+// MARK: - Chat Models
+
+/// Represents a message in the chat conversation
 struct ChatMessage: Identifiable {
     let id = UUID()
     let content: String
@@ -338,15 +341,19 @@ struct SuggestedQuestionButton: View {
     }
 }
 
-struct ManualDocument: Identifiable {
+// MARK: - Supporting Types
+
+/// Represents an uploaded PDF file (distinct from SwiftData ManualDocument model)
+struct UploadedPDFFile: Identifiable {
     let id = UUID()
     let name: String
     let url: URL
     let addedDate = Date()
 }
 
-struct ManualDocumentCard: View {
-    let document: ManualDocument
+/// Card view for displaying uploaded PDF files
+struct UploadedPDFCard: View {
+    let document: UploadedPDFFile
 
     var body: some View {
         VStack(spacing: 8) {
@@ -365,8 +372,9 @@ struct ManualDocumentCard: View {
     }
 }
 
-struct DocumentPickerView: UIViewControllerRepresentable {
-    @Binding var manualDocuments: [ManualDocument]
+/// PDF document picker for selecting manual files
+struct PDFDocumentPicker: UIViewControllerRepresentable {
+    @Binding var uploadedFiles: [UploadedPDFFile]
     @Environment(\.dismiss) private var dismiss
 
     func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
@@ -383,16 +391,16 @@ struct DocumentPickerView: UIViewControllerRepresentable {
     }
 
     class Coordinator: NSObject, UIDocumentPickerDelegate {
-        let parent: DocumentPickerView
+        let parent: PDFDocumentPicker
 
-        init(_ parent: DocumentPickerView) {
+        init(_ parent: PDFDocumentPicker) {
             self.parent = parent
         }
 
         func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
             guard let url = urls.first else { return }
-            let document = ManualDocument(name: url.lastPathComponent, url: url)
-            parent.manualDocuments.append(document)
+            let document = UploadedPDFFile(name: url.lastPathComponent, url: url)
+            parent.uploadedFiles.append(document)
             parent.dismiss()
         }
     }

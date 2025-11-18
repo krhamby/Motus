@@ -38,20 +38,12 @@ struct ContentView: View {
                     Label("Parts", systemImage: "gearshape.2.fill")
                 }
 
-            // AI Manual Assistant - uses the new RAG-powered implementation
+            // AI Manual Assistant - RAG-powered document querying with Foundation Models
             ManualLibraryView(modelContext: modelContext)
                 .tabItem {
                     Label("AI Manual", systemImage: "brain")
                 }
         }
-    }
-}
-
-// DashboardView is now in a separate file or defined elsewhere
-// Keeping stub for compatibility
-struct DashboardView: View {
-    var body: some View {
-        Text("Dashboard")
     }
 }
 
