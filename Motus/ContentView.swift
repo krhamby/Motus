@@ -9,6 +9,8 @@ import SwiftUI
 import SwiftData
 
 struct ContentView: View {
+    @Environment(\.modelContext) private var modelContext
+
     var body: some View {
         TabView {
             DashboardView()
@@ -36,11 +38,20 @@ struct ContentView: View {
                     Label("Parts", systemImage: "gearshape.2.fill")
                 }
 
-            CarManualAssistantView()
+            // AI Manual Assistant - uses the new RAG-powered implementation
+            ManualLibraryView(modelContext: modelContext)
                 .tabItem {
-                    Label("AI Assistant", systemImage: "sparkles")
+                    Label("AI Manual", systemImage: "brain")
                 }
         }
+    }
+}
+
+// DashboardView is now in a separate file or defined elsewhere
+// Keeping stub for compatibility
+struct DashboardView: View {
+    var body: some View {
+        Text("Dashboard")
     }
 }
 
