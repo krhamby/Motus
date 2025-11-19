@@ -62,18 +62,18 @@ struct FuelLogsListView: View {
             VStack(spacing: 0) {
                 // Summary Stats
                 if !filteredLogs.isEmpty {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 12) {
-                            FuelStatCard(title: "Total Spent", value: String(format: "$%.2f", totalSpent), icon: "dollarsign.circle.fill", color: .red)
-                            FuelStatCard(title: "Avg Price/Gal", value: String(format: "$%.2f", averagePricePerGallon), icon: "fuelpump.fill", color: .blue)
-                            FuelStatCard(title: "Total Gallons", value: String(format: "%.1f", totalGallons), icon: "drop.fill", color: .cyan)
-                            if averageMPG > 0 {
-                                FuelStatCard(title: "Avg MPG", value: String(format: "%.1f", averageMPG), icon: "gauge.high", color: .green)
-                            }
+                    VStack(alignment: .leading, spacing: 6) {
+                        FuelStatRow(title: "Total Spent", value: String(format: "$%.2f", totalSpent), icon: "dollarsign.circle.fill", color: .red)
+                        FuelStatRow(title: "Total Gallons", value: String(format: "%.1f gal", totalGallons), icon: "drop.fill", color: .orange)
+                        FuelStatRow(title: "Avg Price/Gal", value: String(format: "$%.2f", averagePricePerGallon), icon: "fuelpump.fill", color: .blue)
+                        if averageMPG > 0 {
+                            FuelStatRow(title: "Avg MPG", value: String(format: "%.1f", averageMPG), icon: "gauge.high", color: .green)
                         }
-                        .padding(.horizontal)
                     }
-                    .padding(.vertical)
+                    .padding(.horizontal)
+                    .padding(.vertical, 12)
+                    .background(Color(.systemGray6))
+                    .cornerRadius(8)
 
                     // Price Trend Chart
                     if filteredLogs.count >= 2 {
@@ -193,29 +193,26 @@ struct FuelLogsListView: View {
     }
 }
 
-struct FuelStatCard: View {
+struct FuelStatRow: View {
     let title: String
     let value: String
     let icon: String
     let color: Color
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        HStack(spacing: 8) {
             Image(systemName: icon)
                 .foregroundStyle(color)
-                .font(.title3)
-            Text(value)
-                .font(.title2)
-                .fontWeight(.semibold)
+                .font(.body)
+                .frame(width: 20)
             Text(title)
-                .font(.caption)
+                .font(.subheadline)
                 .foregroundStyle(.secondary)
+            Spacer()
+            Text(value)
+                .font(.subheadline)
+                .fontWeight(.semibold)
         }
-        .frame(width: 140, alignment: .leading)
-        .padding()
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .shadow(radius: 2)
     }
 }
 
