@@ -67,65 +67,73 @@ class AIAssistant: ObservableObject {
     ///   - carModel: Optional car model
     ///   - year: Optional car year
     /// - Returns: The processed ManualDocument
-    func processDocument(
+    nonisolated func processDocument(
         pdfData: Data,
         name: String,
         carMake: String? = nil,
         carModel: String? = nil,
         year: Int? = nil
     ) async throws -> ManualDocument {
-        isProcessing = true
-        defer { isProcessing = false }
+        await MainActor.run { isProcessing = true }
+        defer { Task { @MainActor in isProcessing = false } }
 
         do {
-            // Parse PDF
-            let parseResult = try pdfParser.parse(data: pdfData)
+            // Parse PDF on background thread (heavy operation)
+            let parseResult = try await Task.detached {
+                try self.pdfParser.parse(data: pdfData)
+            }.value
 
-            // Create document
-            let document = ManualDocument(
-                name: name,
-                carMake: carMake,
-                carModel: carModel,
-                year: year,
-                fileSize: Int64(pdfData.count),
-                pageCount: parseResult.pageCount,
-                pdfData: pdfData,
-                fullText: parseResult.fullText,
-                isProcessed: false
-            )
+            // Chunk the document on background thread (heavy operation)
+            let textChunks = await Task.detached {
+                self.chunker.chunk(
+                    text: parseResult.fullText,
+                    pageTexts: parseResult.pageTexts
+                )
+            }.value
 
-            modelContext.insert(document)
-
-            // Chunk the document
-            let textChunks = chunker.chunk(
-                text: parseResult.fullText,
-                pageTexts: parseResult.pageTexts
-            )
-
-            // Convert to DocumentChunk models and add to document
-            for (index, textChunk) in textChunks.enumerated() {
-                let chunk = DocumentChunk(
-                    content: textChunk.content,
-                    pageNumbers: textChunk.pageNumbers,
-                    chunkIndex: index,
-                    tokenCount: textChunk.tokenCount,
-                    sectionHeading: textChunk.sectionHeading,
-                    keywords: textChunk.keywords
+            // Create document and chunks on main actor (database operations)
+            return try await MainActor.run {
+                let document = ManualDocument(
+                    name: name,
+                    carMake: carMake,
+                    carModel: carModel,
+                    year: year,
+                    fileSize: Int64(pdfData.count),
+                    pageCount: parseResult.pageCount,
+                    pdfData: pdfData,
+                    fullText: parseResult.fullText,
+                    isProcessed: false
                 )
 
-                chunk.document = document
-                document.chunks.append(chunk)
-                modelContext.insert(chunk)
+                self.modelContext.insert(document)
+
+                // Convert to DocumentChunk models and add to document
+                for (index, textChunk) in textChunks.enumerated() {
+                    let chunk = DocumentChunk(
+                        content: textChunk.content,
+                        pageNumbers: textChunk.pageNumbers,
+                        chunkIndex: index,
+                        tokenCount: textChunk.tokenCount,
+                        sectionHeading: textChunk.sectionHeading,
+                        keywords: textChunk.keywords
+                    )
+
+                    chunk.document = document
+                    document.chunks.append(chunk)
+                    self.modelContext.insert(chunk)
+                }
+
+                document.isProcessed = true
+
+                try self.modelContext.save()
+
+                return document
             }
 
-            document.isProcessed = true
-
-            try modelContext.save()
-
-            return document
-
         } catch {
-            lastError = "Failed to process document: \(error.localizedDescription)"
+            await MainActor.run {
+                lastError = "Failed to process document: \(error.localizedDescription)"
+            }
             throw error
         }
     }

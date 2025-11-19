@@ -82,24 +82,38 @@ struct ManualLibraryView: View {
             }
             .onDelete(perform: deleteDocuments)
         }
+        .listStyle(.plain)
     }
 
     private var processingOverlay: some View {
         ZStack {
-            Color.black.opacity(0.4)
+            Color.black.opacity(0.5)
                 .ignoresSafeArea()
 
-            VStack(spacing: 20) {
+            VStack(spacing: 24) {
                 ProgressView()
+                    .controlSize(.large)
                     .scaleEffect(1.5)
+                    .tint(.white)
 
-                Text(processingProgress)
-                    .font(.headline)
-                    .foregroundStyle(.white)
+                VStack(spacing: 8) {
+                    Text("Processing Manual")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.white)
+
+                    Text(processingProgress)
+                        .font(.subheadline)
+                        .foregroundStyle(.white.opacity(0.9))
+                        .multilineTextAlignment(.center)
+                }
             }
-            .padding(40)
-            .background(.regularMaterial)
-            .cornerRadius(20)
+            .padding(48)
+            .background(
+                RoundedRectangle(cornerRadius: 24)
+                    .fill(.ultraThinMaterial)
+            )
+            .shadow(color: .black.opacity(0.3), radius: 20, x: 0, y: 10)
         }
     }
 
@@ -132,22 +146,28 @@ struct ManualLibraryView: View {
         }
     }
 
+    @MainActor
     private func processDocument(pdfData: Data, name: String) async {
         isProcessing = true
         processingProgress = "Analyzing PDF..."
 
+        // Give UI time to show the overlay
+        try? await Task.sleep(for: .milliseconds(100))
+
         do {
-            processingProgress = "Extracting text..."
-            await Task.yield()
+            processingProgress = "Extracting text from pages..."
+            try? await Task.sleep(for: .milliseconds(100))
 
             processingProgress = "Creating intelligent chunks..."
+            try? await Task.sleep(for: .milliseconds(100))
+
             let _ = try await assistant.processDocument(
                 pdfData: pdfData,
                 name: name
             )
 
             processingProgress = "Done!"
-            try await Task.sleep(for: .seconds(0.5))
+            try? await Task.sleep(for: .milliseconds(500))
 
         } catch {
             processingProgress = "Error: \(error.localizedDescription)"
