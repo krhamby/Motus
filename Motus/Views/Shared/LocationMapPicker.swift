@@ -38,6 +38,8 @@ struct LocationMapPicker: View {
     @State private var searchResults: [BusinessLocation] = []
     @State private var selectedLocation: BusinessLocation?
     @State private var isSearching = false
+    @State private var currentRegion: MKCoordinateRegion?
+    @State private var searchTask: Task<Void, Never>?
 
     var body: some View {
         NavigationStack {
@@ -53,6 +55,40 @@ struct LocationMapPicker: View {
                 .mapControls {
                     MapUserLocationButton()
                     MapCompass()
+                }
+                .onMapCameraChange { context in
+                    currentRegion = context.region
+
+                    // Cancel any pending search
+                    searchTask?.cancel()
+
+                    // Debounce: Search after 0.5 seconds of no movement
+                    searchTask = Task {
+                        try? await Task.sleep(nanoseconds: 500_000_000)
+
+                        guard !Task.isCancelled else { return }
+                        await searchInVisibleRegion(context.region)
+                    }
+                }
+
+                // Search indicator at top
+                VStack {
+                    if isSearching {
+                        HStack(spacing: 8) {
+                            ProgressView()
+                                .controlSize(.small)
+                            Text("Searching this area...")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(.ultraThinMaterial)
+                        .clipShape(RoundedRectangle(cornerRadius: 20))
+                        .shadow(radius: 4)
+                        .padding(.top, 8)
+                    }
+                    Spacer()
                 }
 
                 // Search results card overlay
@@ -120,6 +156,14 @@ struct LocationMapPicker: View {
             .searchable(text: $searchText, prompt: "Search for \(searchCategory.lowercased())")
             .onSubmit(of: .search) {
                 performSearch()
+            }
+            .onChange(of: searchText) { oldValue, newValue in
+                // If user clears the search, search the visible region
+                if !oldValue.isEmpty && newValue.isEmpty, let region = currentRegion {
+                    Task {
+                        await searchInVisibleRegion(region)
+                    }
+                }
             }
             .onChange(of: selectedLocation) { _, newValue in
                 if let location = newValue {
@@ -194,6 +238,11 @@ struct LocationMapPicker: View {
         request.naturalLanguageQuery = query
         request.resultTypes = .pointOfInterest
 
+        // Use current region if available
+        if let region = currentRegion {
+            request.region = region
+        }
+
         let search = MKLocalSearch(request: request)
 
         do {
@@ -214,6 +263,40 @@ struct LocationMapPicker: View {
                         center: firstResult.coordinate,
                         span: MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1)
                     ))
+                }
+
+                isSearching = false
+            }
+        } catch {
+            print("Search error: \(error)")
+            isSearching = false
+        }
+    }
+
+    private func searchInVisibleRegion(_ region: MKCoordinateRegion) async {
+        // Don't search if user is actively typing in the search bar
+        guard searchText.isEmpty else { return }
+
+        isSearching = true
+
+        let request = MKLocalSearch.Request()
+        request.naturalLanguageQuery = searchCategory
+        request.resultTypes = .pointOfInterest
+        request.region = region
+
+        let search = MKLocalSearch(request: request)
+
+        do {
+            let response = try await search.start()
+
+            await MainActor.run {
+                searchResults = response.mapItems.prefix(15).map { item in
+                    BusinessLocation(
+                        name: item.name ?? "Unknown",
+                        address: formatAddress(item.placemark),
+                        coordinate: item.placemark.coordinate,
+                        category: item.pointOfInterestCategory?.rawValue ?? searchCategory
+                    )
                 }
 
                 isSearching = false
