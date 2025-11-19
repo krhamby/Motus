@@ -6,5 +6,7 @@
 	<array>
 		<string>remote-notification</string>
 	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Motus needs your location to help you find nearby auto repair shops and gas stations when adding service records and fuel logs.</string>
 </dict>
 </plist>

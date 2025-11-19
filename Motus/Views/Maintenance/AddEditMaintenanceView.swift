@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import MapKit
 
 struct AddEditMaintenanceView: View {
     @Environment(\.modelContext) private var modelContext
@@ -29,6 +30,12 @@ struct AddEditMaintenanceView: View {
     @State private var hasNextServiceDate = false
     @State private var warrantyExpiration: Date?
     @State private var hasWarranty = false
+
+    // Location data
+    @State private var providerLatitude: Double?
+    @State private var providerLongitude: Double?
+    @State private var providerAddress: String?
+    @State private var showingMapPicker = false
 
     var isEditing: Bool {
         record != nil
@@ -89,7 +96,39 @@ struct AddEditMaintenanceView: View {
                 }
 
                 Section("Service Provider") {
-                    TextField("Business Name", text: $serviceProvider)
+                    HStack {
+                        TextField("Business Name", text: $serviceProvider)
+                        Button(action: {
+                            showingMapPicker = true
+                        }) {
+                            Image(systemName: "map.fill")
+                                .foregroundStyle(.white)
+                                .font(.system(size: 14, weight: .semibold))
+                                .frame(width: 32, height: 32)
+                                .background(
+                                    LinearGradient(
+                                        colors: [.blue, .cyan],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                                .clipShape(Circle())
+                                .shadow(color: .blue.opacity(0.3), radius: 4, x: 0, y: 2)
+                        }
+                        .buttonStyle(.plain)
+                    }
+
+                    if let address = providerAddress {
+                        HStack {
+                            Image(systemName: "mappin.circle.fill")
+                                .foregroundStyle(.blue)
+                                .font(.caption)
+                            Text(address)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
                     TextField("Technician Name", text: $technicianName)
                 }
 
@@ -151,6 +190,15 @@ struct AddEditMaintenanceView: View {
                     selectedVehicle = vehicles.first
                 }
             }
+            .sheet(isPresented: $showingMapPicker) {
+                LocationMapPicker(
+                    selectedName: $serviceProvider,
+                    selectedLatitude: $providerLatitude,
+                    selectedLongitude: $providerLongitude,
+                    selectedAddress: $providerAddress,
+                    searchCategory: "Auto Repair Shop"
+                )
+            }
         }
     }
 
@@ -171,6 +219,9 @@ struct AddEditMaintenanceView: View {
         hasNextServiceDate = record.nextServiceDate != nil
         warrantyExpiration = record.warrantyExpiration
         hasWarranty = record.warrantyExpiration != nil
+        providerLatitude = record.serviceProviderLatitude
+        providerLongitude = record.serviceProviderLongitude
+        providerAddress = record.serviceProviderAddress
     }
 
     private func saveRecord() {
@@ -192,6 +243,9 @@ struct AddEditMaintenanceView: View {
             record.nextServiceMileage = nextMileageValue
             record.nextServiceDate = hasNextServiceDate ? nextServiceDate : nil
             record.warrantyExpiration = hasWarranty ? warrantyExpiration : nil
+            record.serviceProviderLatitude = providerLatitude
+            record.serviceProviderLongitude = providerLongitude
+            record.serviceProviderAddress = providerAddress
         } else {
             // Create new record
             let newRecord = MaintenanceRecord(
@@ -205,7 +259,10 @@ struct AddEditMaintenanceView: View {
                 notes: notes,
                 nextServiceMileage: nextMileageValue,
                 nextServiceDate: hasNextServiceDate ? nextServiceDate : nil,
-                warrantyExpiration: hasWarranty ? warrantyExpiration : nil
+                warrantyExpiration: hasWarranty ? warrantyExpiration : nil,
+                serviceProviderLatitude: providerLatitude,
+                serviceProviderLongitude: providerLongitude,
+                serviceProviderAddress: providerAddress
             )
             newRecord.vehicle = selectedVehicle
             modelContext.insert(newRecord)

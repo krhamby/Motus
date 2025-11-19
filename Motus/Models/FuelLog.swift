@@ -29,6 +29,11 @@ final class FuelLog {
     var notes: String
     var octaneRating: Int?
 
+    // Location data for gas station
+    var locationLatitude: Double?
+    var locationLongitude: Double?
+    var locationAddress: String?
+
     // Calculated fields
     var tripMiles: Int?
     var mpg: Double?
@@ -45,7 +50,10 @@ final class FuelLog {
         fuelGrade: FuelGrade = .regular,
         fullTank: Bool = true,
         notes: String = "",
-        octaneRating: Int? = nil
+        octaneRating: Int? = nil,
+        locationLatitude: Double? = nil,
+        locationLongitude: Double? = nil,
+        locationAddress: String? = nil
     ) {
         self.date = date
         self.mileage = mileage
@@ -57,6 +65,9 @@ final class FuelLog {
         self.fullTank = fullTank
         self.notes = notes
         self.octaneRating = octaneRating
+        self.locationLatitude = locationLatitude
+        self.locationLongitude = locationLongitude
+        self.locationAddress = locationAddress
     }
 
     var grade: FuelGrade {

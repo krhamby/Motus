@@ -114,7 +114,18 @@ struct FuelLogDetailView: View {
                 }
 
                 // Location
-                if !log.location.isEmpty {
+                if let latitude = log.locationLatitude,
+                   let longitude = log.locationLongitude,
+                   !log.location.isEmpty {
+                    LocationMapPreview(
+                        businessName: log.location,
+                        latitude: latitude,
+                        longitude: longitude,
+                        tintColor: .orange
+                    )
+                    .background(Color(.systemGray6))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                } else if !log.location.isEmpty {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Location")
                             .font(.headline)

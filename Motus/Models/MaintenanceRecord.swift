@@ -37,6 +37,11 @@ final class MaintenanceRecord {
     var nextServiceDate: Date?
     var warrantyExpiration: Date?
 
+    // Location data for service provider
+    var serviceProviderLatitude: Double?
+    var serviceProviderLongitude: Double?
+    var serviceProviderAddress: String?
+
     // Relationships
     var vehicle: Vehicle?
     @Relationship(deleteRule: .cascade) var partsUsed: [Part] = []
@@ -52,7 +57,10 @@ final class MaintenanceRecord {
         notes: String = "",
         nextServiceMileage: Int? = nil,
         nextServiceDate: Date? = nil,
-        warrantyExpiration: Date? = nil
+        warrantyExpiration: Date? = nil,
+        serviceProviderLatitude: Double? = nil,
+        serviceProviderLongitude: Double? = nil,
+        serviceProviderAddress: String? = nil
     ) {
         self.date = date
         self.type = type.rawValue
@@ -65,6 +73,9 @@ final class MaintenanceRecord {
         self.nextServiceMileage = nextServiceMileage
         self.nextServiceDate = nextServiceDate
         self.warrantyExpiration = warrantyExpiration
+        self.serviceProviderLatitude = serviceProviderLatitude
+        self.serviceProviderLongitude = serviceProviderLongitude
+        self.serviceProviderAddress = serviceProviderAddress
     }
 
     var maintenanceType: MaintenanceType {
