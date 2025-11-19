@@ -10,18 +10,14 @@ import SwiftData
 
 struct MoreView: View {
     @Environment(\.modelContext) private var modelContext
-    @State private var selectedDestination: MoreDestination?
-
-    enum MoreDestination: Hashable {
-        case parts
-        case manual
-    }
 
     var body: some View {
         NavigationStack {
             List {
                 Section {
-                    NavigationLink(value: MoreDestination.parts) {
+                    NavigationLink {
+                        PartsListView()
+                    } label: {
                         Label {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("Parts Inventory")
@@ -37,7 +33,9 @@ struct MoreView: View {
                         }
                     }
 
-                    NavigationLink(value: MoreDestination.manual) {
+                    NavigationLink {
+                        ManualLibraryView(modelContext: modelContext)
+                    } label: {
                         Label {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("AI Manual Assistant")
@@ -55,14 +53,6 @@ struct MoreView: View {
                 }
             }
             .navigationTitle("More")
-            .navigationDestination(for: MoreDestination.self) { destination in
-                switch destination {
-                case .parts:
-                    PartsListView()
-                case .manual:
-                    ManualLibraryView(modelContext: modelContext)
-                }
-            }
         }
     }
 }
