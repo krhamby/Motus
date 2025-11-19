@@ -15,6 +15,7 @@ struct ManualDetailView: View {
     @Query private var queryHistory: [QueryHistory]
     @State private var currentQuery: String = ""
     @State private var isQuerying = false
+    @FocusState private var isTextFieldFocused: Bool
 
     init(document: ManualDocument, assistant: AIAssistant) {
         self.document = document
@@ -149,10 +150,21 @@ struct ManualDetailView: View {
 
     private var queryInputView: some View {
         HStack(spacing: 12) {
-            TextField("Ask about your manual...", text: $currentQuery, axis: .vertical)
-                .textFieldStyle(.roundedBorder)
-                .lineLimit(1...4)
-                .disabled(isQuerying)
+            HStack(spacing: 8) {
+                TextField("Ask about your manual...", text: $currentQuery, axis: .vertical)
+                    .lineLimit(1...4)
+                    .disabled(isQuerying)
+                    .focused($isTextFieldFocused)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .frame(minHeight: 36)
+                    .submitLabel(.send)
+                    .onSubmit {
+                        submitQuery()
+                    }
+            }
+            .background(Color(.systemGray6))
+            .cornerRadius(18)
 
             Button {
                 submitQuery()
@@ -163,7 +175,8 @@ struct ManualDetailView: View {
             }
             .disabled(currentQuery.isEmpty || isQuerying)
         }
-        .padding()
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
         .background(.ultraThinMaterial)
     }
 
@@ -174,6 +187,7 @@ struct ManualDetailView: View {
         guard !query.isEmpty else { return }
 
         currentQuery = ""
+        isTextFieldFocused = false // Dismiss keyboard
         isQuerying = true
 
         Task {
@@ -215,54 +229,74 @@ struct QueryBubbleView: View {
     let query: QueryHistory
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 16) {
             // User question
             HStack {
-                Spacer()
+                Spacer(minLength: 60)
                 Text(query.query)
-                    .padding(12)
-                    .background(.blue)
+                    .font(.body)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(
+                        LinearGradient(
+                            colors: [Color.blue, Color.blue.opacity(0.8)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
                     .foregroundStyle(.white)
-                    .cornerRadius(16)
-                    .frame(maxWidth: 300, alignment: .trailing)
+                    .cornerRadius(20)
+                    .shadow(color: .blue.opacity(0.3), radius: 4, x: 0, y: 2)
             }
 
             // AI response
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 8) {
-                    Image(systemName: "brain")
+                    Image(systemName: "brain.head.profile")
+                        .font(.caption)
                         .foregroundStyle(.purple)
                     Text("AI Assistant")
                         .font(.caption)
                         .fontWeight(.semibold)
                         .foregroundStyle(.secondary)
                 }
+                .padding(.leading, 4)
 
-                Text(query.response)
-                    .padding(12)
-                    .background(.gray.opacity(0.1))
-                    .cornerRadius(16)
+                HStack {
+                    Text(query.response)
+                        .font(.body)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .background(Color(.systemGray5))
+                        .foregroundStyle(.primary)
+                        .cornerRadius(20)
+                        .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+
+                    Spacer(minLength: 60)
+                }
 
                 // Source pages
                 if !query.relevantChunks.isEmpty {
                     let allPages = Set(query.relevantChunks.flatMap { $0.pageNumbers })
                     if !allPages.isEmpty {
-                        HStack(spacing: 4) {
-                            Image(systemName: "doc.text")
+                        HStack(spacing: 6) {
+                            Image(systemName: "doc.text.fill")
                                 .font(.caption2)
-                            Text("Sources: Pages \(allPages.sorted().map(String.init).joined(separator: ", "))")
+                            Text("Pages \(allPages.sorted().map(String.init).joined(separator: ", "))")
                                 .font(.caption)
                         }
                         .foregroundStyle(.secondary)
+                        .padding(.leading, 4)
+                        .padding(.top, 2)
                     }
                 }
 
                 // Timestamp
                 Text(query.timestamp, style: .relative)
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.tertiary)
+                    .padding(.leading, 4)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 }
