@@ -12,7 +12,16 @@ import SwiftData
 struct MotusApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
+            // Car maintenance models
+            Vehicle.self,
+            MaintenanceRecord.self,
+            FuelLog.self,
+            Part.self,
+            ServiceReminder.self,
+            // AI Manual Assistant models
+            ManualDocument.self,
+            DocumentChunk.self,
+            QueryHistory.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
