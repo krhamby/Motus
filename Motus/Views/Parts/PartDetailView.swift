@@ -99,7 +99,7 @@ struct PartDetailView: View {
                             Text(String(format: "$%.2f", part.totalCost))
                                 .font(.title3)
                                 .fontWeight(.bold)
-                                .foregroundStyle(.accent)
+                                .foregroundStyle(Color.accentColor)
                         }
                     }
                 }

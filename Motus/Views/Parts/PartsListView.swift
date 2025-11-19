@@ -230,7 +230,7 @@ struct PartRowView: View {
                 Spacer()
                 Text(String(format: "$%.2f", part.totalCost))
                     .font(.headline)
-                    .foregroundStyle(.accent)
+                    .foregroundStyle(Color.accentColor)
             }
 
             if !part.brand.isEmpty {

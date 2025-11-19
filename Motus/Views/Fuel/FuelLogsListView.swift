@@ -230,7 +230,7 @@ struct FuelLogCell: View {
                 Spacer()
                 Text(String(format: "$%.2f", log.totalCost))
                     .font(.headline)
-                    .foregroundStyle(.accent)
+                    .foregroundStyle(Color.accentColor)
             }
 
             HStack {

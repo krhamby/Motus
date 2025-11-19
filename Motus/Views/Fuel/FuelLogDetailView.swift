@@ -62,7 +62,7 @@ struct FuelLogDetailView: View {
                         Text(String(format: "$%.2f", log.totalCost))
                             .font(.title3)
                             .fontWeight(.bold)
-                            .foregroundStyle(.accent)
+                            .foregroundStyle(Color.accentColor)
                     }
                 }
                 .padding()

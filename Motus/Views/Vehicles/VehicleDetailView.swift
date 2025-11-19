@@ -37,7 +37,7 @@ struct VehicleDetailView: View {
                         } label: {
                             Image(systemName: "pencil.circle.fill")
                                 .font(.title)
-                                .foregroundStyle(.accent)
+                                .foregroundStyle(Color.accentColor)
                         }
                     }
 

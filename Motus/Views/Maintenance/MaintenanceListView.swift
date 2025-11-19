@@ -194,7 +194,7 @@ struct MaintenanceRecordCell: View {
                 Spacer()
                 Text(String(format: "$%.2f", record.cost))
                     .font(.headline)
-                    .foregroundStyle(.accent)
+                    .foregroundStyle(Color.accentColor)
             }
 
             HStack {
