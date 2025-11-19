@@ -102,6 +102,19 @@ struct MaintenanceDetailView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
 
+                // Location Map
+                if let latitude = record.serviceProviderLatitude,
+                   let longitude = record.serviceProviderLongitude {
+                    LocationMapPreview(
+                        businessName: record.serviceProvider,
+                        latitude: latitude,
+                        longitude: longitude,
+                        tintColor: .blue
+                    )
+                    .background(Color(.systemGray6))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+
                 // Parts Used
                 if !record.partsUsed.isEmpty {
                     VStack(alignment: .leading, spacing: 12) {

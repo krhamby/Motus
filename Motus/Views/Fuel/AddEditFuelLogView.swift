@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import MapKit
 
 struct AddEditFuelLogView: View {
     @Environment(\.modelContext) private var modelContext
@@ -26,6 +27,12 @@ struct AddEditFuelLogView: View {
     @State private var fullTank = true
     @State private var octaneRating = ""
     @State private var notes = ""
+
+    // Location data
+    @State private var locationLatitude: Double?
+    @State private var locationLongitude: Double?
+    @State private var locationAddress: String?
+    @State private var showingMapPicker = false
 
     var isEditing: Bool {
         log != nil
@@ -143,7 +150,38 @@ struct AddEditFuelLogView: View {
                 }
 
                 Section("Location") {
-                    TextField("Gas Station or Location", text: $location)
+                    HStack {
+                        TextField("Gas Station or Location", text: $location)
+                        Button(action: {
+                            showingMapPicker = true
+                        }) {
+                            Image(systemName: "map.fill")
+                                .foregroundStyle(.white)
+                                .font(.system(size: 14, weight: .semibold))
+                                .frame(width: 32, height: 32)
+                                .background(
+                                    LinearGradient(
+                                        colors: [.orange, .red],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                                .clipShape(Circle())
+                                .shadow(color: .orange.opacity(0.3), radius: 4, x: 0, y: 2)
+                        }
+                        .buttonStyle(.plain)
+                    }
+
+                    if let address = locationAddress {
+                        HStack {
+                            Image(systemName: "mappin.circle.fill")
+                                .foregroundStyle(.orange)
+                                .font(.caption)
+                            Text(address)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                 }
 
                 Section("Notes") {
@@ -176,6 +214,15 @@ struct AddEditFuelLogView: View {
                     }
                 }
             }
+            .sheet(isPresented: $showingMapPicker) {
+                LocationMapPicker(
+                    selectedName: $location,
+                    selectedLatitude: $locationLatitude,
+                    selectedLongitude: $locationLongitude,
+                    selectedAddress: $locationAddress,
+                    searchCategory: "Gas Station"
+                )
+            }
         }
     }
 
@@ -192,6 +239,9 @@ struct AddEditFuelLogView: View {
             octaneRating = String(octane)
         }
         notes = log.notes
+        locationLatitude = log.locationLatitude
+        locationLongitude = log.locationLongitude
+        locationAddress = log.locationAddress
     }
 
     private func saveLog() {
@@ -213,6 +263,9 @@ struct AddEditFuelLogView: View {
             log.octaneRating = octaneValue
             log.notes = notes
             log.mpg = calculatedMPG
+            log.locationLatitude = locationLatitude
+            log.locationLongitude = locationLongitude
+            log.locationAddress = locationAddress
         } else {
             // Create new log
             let newLog = FuelLog(
@@ -224,7 +277,10 @@ struct AddEditFuelLogView: View {
                 fuelGrade: fuelGrade,
                 fullTank: fullTank,
                 notes: notes,
-                octaneRating: octaneValue
+                octaneRating: octaneValue,
+                locationLatitude: locationLatitude,
+                locationLongitude: locationLongitude,
+                locationAddress: locationAddress
             )
             newLog.vehicle = selectedVehicle
             newLog.mpg = calculatedMPG
