@@ -33,6 +33,7 @@ class AIAssistant: ObservableObject {
 
     @Published var isProcessing: Bool = false
     @Published var lastError: String?
+    @Published var modelAvailability: ModelAvailability = .checking
 
     private let pdfParser = PDFParser()
     private let chunker = DocumentChunker()
@@ -55,6 +56,35 @@ class AIAssistant: ObservableObject {
         """
 
         self.languageModelSession = LanguageModelSession(instructions: systemInstructions)
+
+        // Check initial model availability
+        Task {
+            await checkModelAvailability()
+        }
+    }
+
+    // MARK: - Model Availability
+
+    /// Checks if the Foundation Model is available
+    func checkModelAvailability() async {
+        let systemModel = SystemLanguageModel()
+
+        switch systemModel.availability {
+        case .available:
+            modelAvailability = .available
+
+        case .unavailable(.modelNotReady):
+            modelAvailability = .downloading
+
+        case .unavailable(.appleIntelligenceNotEnabled):
+            modelAvailability = .appleIntelligenceDisabled
+
+        case .unavailable(.deviceNotEligible):
+            modelAvailability = .deviceNotSupported
+
+        case .unavailable:
+            modelAvailability = .unavailable
+        }
     }
 
     // MARK: - Document Processing
@@ -148,6 +178,12 @@ class AIAssistant: ObservableObject {
     func query(_ query: String, document: ManualDocument) async throws -> QueryHistory {
         isProcessing = true
         defer { isProcessing = false }
+
+        // Check model availability first
+        await checkModelAvailability()
+        guard modelAvailability.isAvailable else {
+            throw AIAssistantError.modelUnavailable(modelAvailability)
+        }
 
         guard document.isProcessed else {
             throw AIAssistantError.documentNotProcessed
@@ -314,6 +350,7 @@ enum AIAssistantError: LocalizedError {
     case documentNotProcessed
     case noRelevantContent
     case processingFailed(String)
+    case modelUnavailable(ModelAvailability)
 
     var errorDescription: String? {
         switch self {
@@ -323,6 +360,40 @@ enum AIAssistantError: LocalizedError {
             return "I couldn't find relevant information in the manual to answer your question."
         case .processingFailed(let message):
             return "Processing failed: \(message)"
+        case .modelUnavailable(let availability):
+            return availability.errorMessage
         }
+    }
+}
+
+// MARK: - Model Availability
+
+enum ModelAvailability {
+    case checking
+    case available
+    case downloading
+    case appleIntelligenceDisabled
+    case deviceNotSupported
+    case unavailable
+
+    var errorMessage: String {
+        switch self {
+        case .checking:
+            return "Checking model availability..."
+        case .available:
+            return ""
+        case .downloading:
+            return "Apple Intelligence is downloading. Please wait and try again."
+        case .appleIntelligenceDisabled:
+            return "Apple Intelligence is disabled. Please enable it in Settings."
+        case .deviceNotSupported:
+            return "This device doesn't support Apple Intelligence."
+        case .unavailable:
+            return "The AI model is currently unavailable."
+        }
+    }
+
+    var isAvailable: Bool {
+        self == .available
     }
 }

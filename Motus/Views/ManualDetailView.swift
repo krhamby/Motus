@@ -15,6 +15,8 @@ struct ManualDetailView: View {
     @Query private var queryHistory: [QueryHistory]
     @State private var currentQuery: String = ""
     @State private var isQuerying = false
+    @State private var errorMessage: String?
+    @State private var showError = false
     @FocusState private var isTextFieldFocused: Bool
 
     init(document: ManualDocument, assistant: AIAssistant) {
@@ -41,6 +43,11 @@ struct ManualDetailView: View {
 
             Divider()
 
+            // Model availability banner
+            if !assistant.modelAvailability.isAvailable {
+                modelAvailabilityBanner
+            }
+
             // Chat/query area
             if queryHistory.isEmpty {
                 emptyQueryView
@@ -55,6 +62,23 @@ struct ManualDetailView: View {
         }
         .navigationTitle("AI Assistant")
         .navigationBarTitleDisplayMode(.inline)
+        .alert("Error", isPresented: $showError) {
+            Button("OK") {
+                showError = false
+                errorMessage = nil
+            }
+            if assistant.modelAvailability == .appleIntelligenceDisabled {
+                Button("Open Settings") {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                }
+            }
+        } message: {
+            if let errorMessage = errorMessage {
+                Text(errorMessage)
+            }
+        }
     }
 
     // MARK: - Views
@@ -81,6 +105,83 @@ struct ManualDetailView: View {
             }
 
             Spacer()
+        }
+    }
+
+    private var modelAvailabilityBanner: some View {
+        HStack(spacing: 12) {
+            Group {
+                switch assistant.modelAvailability {
+                case .checking:
+                    ProgressView()
+                        .controlSize(.small)
+                case .downloading:
+                    Image(systemName: "arrow.down.circle")
+                        .foregroundStyle(.orange)
+                case .appleIntelligenceDisabled:
+                    Image(systemName: "exclamationmark.triangle")
+                        .foregroundStyle(.orange)
+                case .deviceNotSupported:
+                    Image(systemName: "xmark.circle")
+                        .foregroundStyle(.red)
+                case .unavailable:
+                    Image(systemName: "exclamationmark.circle")
+                        .foregroundStyle(.orange)
+                case .available:
+                    EmptyView()
+                }
+            }
+            .font(.title3)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(assistant.modelAvailability.errorMessage)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundStyle(.primary)
+
+                if assistant.modelAvailability == .downloading {
+                    Text("This may take a few minutes")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Spacer()
+
+            if assistant.modelAvailability == .appleIntelligenceDisabled {
+                Button("Settings") {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+            } else if assistant.modelAvailability == .checking || assistant.modelAvailability == .downloading {
+                Button {
+                    Task {
+                        await assistant.checkModelAvailability()
+                    }
+                } label: {
+                    Image(systemName: "arrow.clockwise")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+            }
+        }
+        .padding()
+        .background(bannerColor)
+    }
+
+    private var bannerColor: Color {
+        switch assistant.modelAvailability {
+        case .checking, .downloading:
+            return Color.orange.opacity(0.15)
+        case .appleIntelligenceDisabled, .unavailable:
+            return Color.orange.opacity(0.15)
+        case .deviceNotSupported:
+            return Color.red.opacity(0.15)
+        case .available:
+            return Color.clear
         }
     }
 
@@ -151,9 +252,9 @@ struct ManualDetailView: View {
     private var queryInputView: some View {
         HStack(spacing: 12) {
             HStack(spacing: 8) {
-                TextField("Ask about your manual...", text: $currentQuery, axis: .vertical)
+                TextField(inputPlaceholder, text: $currentQuery, axis: .vertical)
                     .lineLimit(1...4)
-                    .disabled(isQuerying)
+                    .disabled(isQuerying || !assistant.modelAvailability.isAvailable)
                     .focused($isTextFieldFocused)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
@@ -165,19 +266,31 @@ struct ManualDetailView: View {
             }
             .background(Color(.systemGray6))
             .cornerRadius(18)
+            .opacity(assistant.modelAvailability.isAvailable ? 1.0 : 0.6)
 
             Button {
                 submitQuery()
             } label: {
                 Image(systemName: isQuerying ? "hourglass" : "arrow.up.circle.fill")
                     .font(.title2)
-                    .foregroundStyle(currentQuery.isEmpty ? .gray : .blue)
+                    .foregroundStyle(canSendMessage ? .blue : .gray)
             }
-            .disabled(currentQuery.isEmpty || isQuerying)
+            .disabled(!canSendMessage)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .background(.ultraThinMaterial)
+    }
+
+    private var inputPlaceholder: String {
+        if !assistant.modelAvailability.isAvailable {
+            return "AI model not available..."
+        }
+        return "Ask about your manual..."
+    }
+
+    private var canSendMessage: Bool {
+        !currentQuery.isEmpty && !isQuerying && assistant.modelAvailability.isAvailable
     }
 
     // MARK: - Actions
@@ -194,7 +307,13 @@ struct ManualDetailView: View {
             do {
                 _ = try await assistant.query(query, document: document)
             } catch {
-                print("Query error: \(error)")
+                // Show error to user
+                if let aiError = error as? AIAssistantError {
+                    errorMessage = aiError.errorDescription
+                } else {
+                    errorMessage = "Failed to process query: \(error.localizedDescription)"
+                }
+                showError = true
             }
             isQuerying = false
         }
