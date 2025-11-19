@@ -35,7 +35,7 @@ struct ManualLibraryView: View {
             }
             .navigationTitle("My Manuals")
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
                         showingImporter = true
                     } label: {
@@ -82,7 +82,6 @@ struct ManualLibraryView: View {
             }
             .onDelete(perform: deleteDocuments)
         }
-        .listStyle(.plain)
     }
 
     private var processingOverlay: some View {
