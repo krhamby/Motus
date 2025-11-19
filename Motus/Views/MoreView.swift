@@ -55,13 +55,13 @@ struct MoreView: View {
                 }
             }
             .navigationTitle("More")
-        }
-        .navigationDestination(for: MoreDestination.self) { destination in
-            switch destination {
-            case .parts:
-                PartsListView()
-            case .manual:
-                ManualLibraryView(modelContext: modelContext)
+            .navigationDestination(for: MoreDestination.self) { destination in
+                switch destination {
+                case .parts:
+                    PartsListView()
+                case .manual:
+                    ManualLibraryView(modelContext: modelContext)
+                }
             }
         }
     }
