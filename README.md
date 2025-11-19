@@ -1,3 +1,5 @@
+Note: This repository is largely being used to experiment with AI tools. If it goes somewhere, awesome!
+
 # Motus - Complete Car Maintenance Tracker
 
 A comprehensive iOS app for tracking everything related to car maintenance, designed for meticulous record-keeping.
