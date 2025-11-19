@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct FuelLogDetailView: View {
     let log: FuelLog

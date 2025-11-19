@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct PartDetailView: View {
     let part: Part
