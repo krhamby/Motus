@@ -113,8 +113,7 @@ struct DashboardView: View {
                                 isExpanded: expandedVehicles.contains(vehicle.persistentModelID),
                                 maintenanceRecords: maintenanceRecords.filter { $0.vehicle == vehicle },
                                 fuelLogs: fuelLogs.filter { $0.vehicle == vehicle },
-                                serviceReminders: serviceReminders.filter { $0.vehicle == vehicle },
-                                showDetailedSummary: vehicles.count >= 3
+                                serviceReminders: serviceReminders.filter { $0.vehicle == vehicle }
                             ) {
                                 if expandedVehicles.contains(vehicle.persistentModelID) {
                                     expandedVehicles.remove(vehicle.persistentModelID)
@@ -186,7 +185,6 @@ struct CollapsibleVehicleSection: View {
     let maintenanceRecords: [MaintenanceRecord]
     let fuelLogs: [FuelLog]
     let serviceReminders: [ServiceReminder]
-    let showDetailedSummary: Bool
     let onToggle: () -> Void
 
     var totalMaintenanceCost: Double {
@@ -225,9 +223,11 @@ struct CollapsibleVehicleSection: View {
 
                     Spacer()
 
-                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                    Image(systemName: "chevron.down")
                         .foregroundStyle(.secondary)
                         .font(.title3)
+                        .rotationEffect(.degrees(isExpanded ? 180 : 0))
+                        .animation(.spring(response: 0.5, dampingFraction: 0.7), value: isExpanded)
                 }
                 .padding()
                 .background(Color(.systemGray6))
@@ -235,8 +235,8 @@ struct CollapsibleVehicleSection: View {
             }
             .buttonStyle(.plain)
 
-            // Collapsed Summary (shown when collapsed and 3+ cars)
-            if !isExpanded && showDetailedSummary {
+            // Collapsed Summary (shown when collapsed)
+            if !isExpanded {
                 VStack(alignment: .leading, spacing: 12) {
                     // Service Alert if any
                     if let alert = nextServiceAlert {
@@ -294,6 +294,10 @@ struct CollapsibleVehicleSection: View {
                     .padding(.bottom, 12)
                 }
                 .background(Color(.systemGray6).opacity(0.5))
+                .transition(.asymmetric(
+                    insertion: .scale(scale: 0.95).combined(with: .opacity).combined(with: .move(edge: .top)),
+                    removal: .scale(scale: 0.95).combined(with: .opacity).combined(with: .move(edge: .top))
+                ))
             }
 
             // Expanded Content
@@ -417,11 +421,17 @@ struct CollapsibleVehicleSection: View {
                 }
                 .padding(.vertical)
                 .background(Color(.systemBackground))
+                .transition(.asymmetric(
+                    insertion: .scale(scale: 0.96).combined(with: .opacity).combined(with: .move(edge: .top)),
+                    removal: .scale(scale: 0.96).combined(with: .opacity).combined(with: .move(edge: .top))
+                ))
             }
         }
         .background(Color(.systemGray6))
         .clipShape(RoundedRectangle(cornerRadius: 12))
+        .shadow(color: .black.opacity(isExpanded ? 0.1 : 0.05), radius: isExpanded ? 8 : 4, x: 0, y: 2)
         .padding(.horizontal)
+        .animation(.spring(response: 0.6, dampingFraction: 0.75, blendDuration: 0), value: isExpanded)
     }
 
     func recentActivity(maintenance: [MaintenanceRecord], fuel: [FuelLog]) -> [ActivityItem] {
