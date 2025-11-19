@@ -62,18 +62,16 @@ struct FuelLogsListView: View {
             VStack(spacing: 0) {
                 // Summary Stats
                 if !filteredLogs.isEmpty {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 12) {
-                            FuelStatCard(title: "Total Spent", value: String(format: "$%.2f", totalSpent), icon: "dollarsign.circle.fill", color: .red)
-                            FuelStatCard(title: "Avg Price/Gal", value: String(format: "$%.2f", averagePricePerGallon), icon: "fuelpump.fill", color: .blue)
-                            FuelStatCard(title: "Total Gallons", value: String(format: "%.1f", totalGallons), icon: "drop.fill", color: .cyan)
-                            if averageMPG > 0 {
-                                FuelStatCard(title: "Avg MPG", value: String(format: "%.1f", averageMPG), icon: "gauge.high", color: .green)
-                            }
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                        FuelStatCard(title: "Total Spent", value: String(format: "$%.2f", totalSpent), icon: "dollarsign.circle.fill", color: .red)
+                        FuelStatCard(title: "Avg Price/Gal", value: String(format: "$%.2f", averagePricePerGallon), icon: "fuelpump.fill", color: .blue)
+                        FuelStatCard(title: "Total Gallons", value: String(format: "%.1f", totalGallons), icon: "drop.fill", color: .orange)
+                        if averageMPG > 0 {
+                            FuelStatCard(title: "Avg MPG", value: String(format: "%.1f", averageMPG), icon: "gauge.high", color: .green)
                         }
-                        .padding(.horizontal)
                     }
-                    .padding(.vertical)
+                    .padding(.horizontal)
+                    .padding(.vertical, 12)
 
                     // Price Trend Chart
                     if filteredLogs.count >= 2 {
@@ -200,19 +198,22 @@ struct FuelStatCard: View {
     let color: Color
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             Image(systemName: icon)
                 .foregroundStyle(color)
                 .font(.title3)
             Text(value)
-                .font(.title2)
+                .font(.title3)
                 .fontWeight(.semibold)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
             Text(title)
                 .font(.caption)
                 .foregroundStyle(.secondary)
+                .lineLimit(1)
         }
-        .frame(width: 140, alignment: .leading)
-        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .shadow(radius: 2)
