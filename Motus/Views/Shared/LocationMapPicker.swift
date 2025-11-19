@@ -8,12 +8,20 @@
 import SwiftUI
 import MapKit
 
-struct BusinessLocation: Identifiable {
+struct BusinessLocation: Identifiable, Equatable, Hashable {
     let id = UUID()
     let name: String
     let address: String
     let coordinate: CLLocationCoordinate2D
     let category: String
+
+    static func == (lhs: BusinessLocation, rhs: BusinessLocation) -> Bool {
+        lhs.id == rhs.id
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
 }
 
 struct LocationMapPicker: View {
