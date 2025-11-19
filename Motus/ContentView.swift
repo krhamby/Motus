@@ -33,15 +33,9 @@ struct ContentView: View {
                     Label("Fuel", systemImage: "fuelpump.fill")
                 }
 
-            PartsListView()
+            MoreView()
                 .tabItem {
-                    Label("Parts", systemImage: "gearshape.2.fill")
-                }
-
-            // AI Manual Assistant - RAG-powered document querying with Foundation Models
-            ManualLibraryView(modelContext: modelContext)
-                .tabItem {
-                    Label("AI Manual", systemImage: "brain")
+                    Label("More", systemImage: "ellipsis.circle")
                 }
         }
     }
