@@ -62,12 +62,16 @@ struct FuelLogsListView: View {
             VStack(spacing: 0) {
                 // Summary Stats
                 if !filteredLogs.isEmpty {
-                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                        FuelStatCard(title: "Total Spent", value: String(format: "$%.2f", totalSpent), icon: "dollarsign.circle.fill", color: .red)
-                        FuelStatCard(title: "Avg Price/Gal", value: String(format: "$%.2f", averagePricePerGallon), icon: "fuelpump.fill", color: .blue)
-                        FuelStatCard(title: "Total Gallons", value: String(format: "%.1f", totalGallons), icon: "drop.fill", color: .orange)
-                        if averageMPG > 0 {
-                            FuelStatCard(title: "Avg MPG", value: String(format: "%.1f", averageMPG), icon: "gauge.high", color: .green)
+                    VStack(spacing: 8) {
+                        HStack(spacing: 8) {
+                            FuelStatCard(title: "Total Spent", value: String(format: "$%.2f", totalSpent), icon: "dollarsign.circle.fill", color: .red)
+                            FuelStatCard(title: "Total Gallons", value: String(format: "%.1f", totalGallons), icon: "drop.fill", color: .orange)
+                        }
+                        HStack(spacing: 8) {
+                            FuelStatCard(title: "Avg Price/Gal", value: String(format: "$%.2f", averagePricePerGallon), icon: "fuelpump.fill", color: .blue)
+                            if averageMPG > 0 {
+                                FuelStatCard(title: "Avg MPG", value: String(format: "%.1f", averageMPG), icon: "gauge.high", color: .green)
+                            }
                         }
                     }
                     .padding(.horizontal)
